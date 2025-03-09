@@ -1,5 +1,5 @@
 import './App.css'
-import {CounterW2} from "./components /CounterW2.tsx";
+import {CounterW2} from "../components /CounterW2.tsx";
 
 export const App = () => {
 
