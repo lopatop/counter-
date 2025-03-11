@@ -1,171 +1,136 @@
-import { ChangeEvent, useState } from "react"
+import { ChangeEvent, useEffect } from "react"
 import { Button, CssBaseline, Grid2 } from "@mui/material"
 import TextField from "@mui/material/TextField"
 import Box from "@mui/material/Box"
 import Container from "@mui/material/Container"
-import { ThemeProvider, createTheme } from "@mui/material/styles"
-import { teal } from "@mui/material/colors"
+import { ThemeProvider } from "@mui/material/styles"
+import { S } from "../styles.ts"
+import { useAppDispatch } from "../common/hooks/useAppDispatch.ts"
+import { useAppSelector } from "../common/hooks/useAppSelector.ts"
+import { selectStart } from "../model/start-selectors.ts"
+import { selectMax } from "../model/max-selectors.ts"
+import { selectMode } from "../model/mode-selectors.ts"
+import { selectCount } from "../model/count-selectors.ts"
+import { setStartAC } from "../model/startReducer.ts"
+import { setModeAC } from "../model/modeReducer.ts"
+import { setMaxAC } from "../model/maxReducer.ts"
+import { incrementCountAC, resetCountAC } from "../model/countReducer.ts"
 
 export const CounterW2 = () => {
 
+  const dispatch = useAppDispatch()
 
-  const [start, setStart] = useState<number>(0)
-  const [max, setMax] = useState<number>(5)
-  const [count, setCount] = useState<number>(start)
-  const [mode, setMode] = useState<boolean>(true)
+  const start = useAppSelector(selectStart)
+  const max = useAppSelector(selectMax)
+  const count = useAppSelector(selectCount)
+  const mode = useAppSelector(selectMode)
+
+
+  useEffect(() => {
+    const valueStart = localStorage.getItem("counterValue")
+    const valueMax = localStorage.getItem("counterValueMax")
+    const valueCount = localStorage.getItem("counterValueCount")
+
+    if (valueStart) {
+      const newValueStart = JSON.parse(valueStart)
+      dispatch(setStartAC({ value: newValueStart }))
+    }
+    if (valueMax) {
+      const newValueMax = JSON.parse(valueMax)
+      dispatch(setMaxAC({ value: newValueMax }))
+    }
+    if (valueCount) {
+      const newValueCount = JSON.parse(valueCount)
+      dispatch(resetCountAC(newValueCount))
+    }
+  }, [])
+
+  useEffect(() => {
+
+    localStorage.setItem("counterValueCount", JSON.stringify(count))
+  }, [count])
 
 
   const onClickButtonIncHandler = () => {
-    setCount(count + 1)
+    dispatch(incrementCountAC())
   }
   const onClickButtonResetHandler = () => {
-    setCount(start)
+    dispatch(resetCountAC(start))
   }
   const onClickButtonSetHandler = () => {
-    setMode(!mode)
-    setCount(start)
+    dispatch(setModeAC(!mode))
+    dispatch(resetCountAC(start))
+    localStorage.setItem("counterValue", JSON.stringify(start))
+    localStorage.setItem("counterValueMax", JSON.stringify(max))
   }
   const onChangeMaxValueHandler = (e: ChangeEvent<HTMLInputElement>) => {
-    setMax(+e.currentTarget.value)
+    dispatch(setMaxAC({ value: +e.currentTarget.value}))
   }
   const onChangeStartValueHandler = (e: ChangeEvent<HTMLInputElement>) => {
-    setStart(+e.currentTarget.value)
+    dispatch(setStartAC({ value: +e.currentTarget.value }))
   }
 
   const errorMax = start >= max
   const errorStart = start < 0 || start === max
   const countMax = count === max
 
-  const theme = createTheme({
-      palette: {
-        primary: teal,
-        secondary: {
-          main: "#b2dfdb"
-        }
-      }
-    }
-  )
+  const disabledButtonInc =  count >= max
+  const disabledButtonSet = errorStart || errorMax
 
-  const containerModalStyled = {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100vw",
-    height: "100vh"
-  }
-  const containerCountStyled = {
-    minWidth: "250px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    maxWidth: "100%",
-    width: "350px",
-    padding: "15px",
-    border: `2px solid ${theme.palette.primary.main}`,
-    borderRadius: "12px",
-    backgroundColor: "#f5f5f5",
-    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)"
-  }
+  const inputLabelStart = errorStart ? "Incorrect" : "Enter start"
+  const inputLabelMax = errorMax ? "Incorrect" : "Enter max"
 
-  const containerModalCountStyled = {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    gap: "10px"
-  }
 
-  const countModalStyled = {
-    color: countMax ? "red" : "#333",
-    width: "100%",
-    height: "70px",
-    backgroundColor: "#fff",
-    borderRadius: "8px",
-    textAlign: "center",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    fontSize: "28px",
-    fontWeight: "bold",
-    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)"
-  }
 
-  const containerButtonStyled = {
-    width: "100%",
-    display: "flex",
-    justifyContent: "space-around",
-    alignItems: "center",
-    padding: "8px",
-    borderRadius: "8px",
-    backgroundColor: `${theme.palette.secondary.main}`,
-    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)"
-  }
-
-  const containerInputValueMaxStyled = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "8px"
-  }
-  const containerInputValueStartStyled = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "16px"
-  }
 
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={S.theme}>
       <CssBaseline />
       <Container
-        sx={containerModalStyled}>
+        sx={S.containerModalStyled}>
         <Container
-          sx={containerCountStyled}
+          sx={S.containerCountStyled}
         >
           {mode ? (
-            <Box sx={containerModalCountStyled}>
-              <Box sx={countModalStyled}>{count}</Box>
-              <Grid2 sx={containerButtonStyled}>
+            <Box sx={S.containerModalCountStyled}>
+              <Box sx={{ ...S.countModalStyled, ...(countMax && S.countMaxErrorStyled) }}>
+                {count}
+              </Box>
+
+              <Grid2 sx={S.containerButtonStyled}>
                 <Button size="small" variant="contained" onClick={onClickButtonIncHandler}
-                        disabled={count >= max}>inc</Button>
+                        disabled={disabledButtonInc}>inc</Button>
                 <Button size="small" variant="contained" onClick={onClickButtonResetHandler}>reset</Button>
                 <Button size="small" variant="contained" onClick={onClickButtonSetHandler}>set</Button>
               </Grid2>
             </Box>
           ) : (
-            <Box sx={{ width: "100%" }}>
-              <Box sx={containerInputValueMaxStyled}>
-                <Box sx={{ fontSize: "16px", fontWeight: "bold" }}>Max value:</Box>
+            <Box sx={S.containerInputsStyled}>
+              <Box sx={S.containerInputValueMaxStyled}>
+                <Box sx={S.wrapperInput}>Max value:</Box>
                 <TextField
-                  sx={{
-                    "& input": { textAlign: "center" },
-                    width: "120px"
-                  }}
+                  sx={S.styledInput}
                   error={errorMax}
                   size="small"
                   type="number"
-                  label={errorMax ? "Incorrect" : "Enter max"}
+                  label={inputLabelMax}
                   variant="outlined"
                   value={max}
                   onChange={onChangeMaxValueHandler}
                 />
               </Box>
 
-              <Box sx={containerInputValueStartStyled}>
-                <Box sx={{ fontSize: "16px", fontWeight: "bold" }}>
+              <Box sx={S.containerInputValueStartStyled}>
+                <Box sx={S.wrapperInput}>
                   Start value:
                 </Box>
                 <TextField
-                  sx={{
-                    "& input": { textAlign: "center" },
-                    width: "120px"
-                  }}
+                  sx={S.styledInput}
                   error={errorStart}
                   size="small"
                   type="number"
-                  label={errorStart ? "Incorrect" : "Enter start"}
+                  label={inputLabelStart}
                   variant="outlined"
                   value={start}
                   onChange={onChangeStartValueHandler}
@@ -177,7 +142,7 @@ export const CounterW2 = () => {
                 size="small"
                 variant="contained"
                 onClick={onClickButtonSetHandler}
-                disabled={errorStart || errorMax}
+                disabled={disabledButtonSet}
               >
                 Set
               </Button>
